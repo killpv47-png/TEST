@@ -829,7 +829,16 @@ total_duration = 19800
 elapsed = 0
 print("🚀 Stable Microservice deployed inside GitHub Action Engine.", flush=True)
 
+# ثبت زمان اولیه برای سیستم زمان‌بندی دقیق هر یک دقیقه
+last_github_update_time = time.time()
+
 while elapsed < total_duration:
     time.sleep(10)
     elapsed += 10
     check_expiration_and_limits()
+    
+    # 🔄 مکانیزم خودکار آپدیت حجم کلاینت‌ها روی گیت‌هاب راس هر ۱ دقیقه (۶0 ثانیه)
+    if time.time() - last_github_update_time >= 60:
+        print("🔄 [Periodic Sync] Running 1-minute auto-update for subscription info...", flush=True)
+        push_subs_to_github()
+        last_github_update_time = time.time()
