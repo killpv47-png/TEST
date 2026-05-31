@@ -1,17 +1,4 @@
 {
-    "Main_kill_pv2": {
-        "uuid": "b6a00fb0-460e-4323-96af-3ba2f48470ee",
-        "total_limit_bytes": 0,
-        "used_bytes": 509068,
-        "clean_ip": "speed.cloudflare.com",
-        "status": "OFFLINE",
-        "last_active_time": 1780220516.1369526,
-        "down_speed": 0,
-        "up_speed": 0,
-        "created_at": 1780220294,
-        "expire_seconds": 31536000,
-        "active": true
-    },
     "Jhj": {
         "uuid": "46d76443-b403-46da-ae00-fceee222265e",
         "total_limit_bytes": 1788853878784,
@@ -41,12 +28,12 @@
     "admin": {
         "uuid": "1e768823-1c9f-492f-9232-0813515f5870",
         "total_limit_bytes": 16106127360,
-        "used_bytes": 1445313693,
+        "used_bytes": 1446344361,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780242506.614276,
-        "down_speed": 1486096,
-        "up_speed": 76054,
+        "last_active_time": 1780242537.84296,
+        "down_speed": 0,
+        "up_speed": 0,
         "created_at": 1780223842,
         "expire_seconds": 2592000,
         "active": true
@@ -119,10 +106,10 @@
     "100": {
         "uuid": "3b52735c-9c2d-4947-92b5-bf9ee0bcd307",
         "total_limit_bytes": 104857600,
-        "used_bytes": 21914036,
+        "used_bytes": 22262785,
         "clean_ip": "104.16.123.96",
         "status": "ONLINE",
-        "last_active_time": 1780242496.8065934,
+        "last_active_time": 1780242526.0301335,
         "down_speed": 0,
         "up_speed": 0,
         "created_at": 1780241165,
@@ -145,12 +132,12 @@
     "20GB": {
         "uuid": "b734433b-30f3-43d2-b4f9-c91af64d22d3",
         "total_limit_bytes": 21474836480,
-        "used_bytes": 668526,
+        "used_bytes": 1881218,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780242496.6055148,
-        "down_speed": 0,
-        "up_speed": 0,
+        "last_active_time": 1780242541.2465112,
+        "down_speed": 382196,
+        "up_speed": 70759,
         "created_at": 1780242102,
         "expire_seconds": 2592000,
         "active": true
