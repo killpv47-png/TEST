@@ -62,7 +62,7 @@
         "up_speed": 0,
         "created_at": 1780233496,
         "expire_seconds": 2592000,
-        "active": true
+        "active": false
     },
     "T": {
         "uuid": "d3e7e376-0d78-46f3-9855-4b6b2dfd9997",
