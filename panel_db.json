@@ -127,17 +127,17 @@
         "up_speed": 0,
         "created_at": 1780241699,
         "expire_seconds": 2592000,
-        "active": true
+        "active": false
     },
     "20GB": {
         "uuid": "b734433b-30f3-43d2-b4f9-c91af64d22d3",
         "total_limit_bytes": 21474836480,
-        "used_bytes": 1988223,
+        "used_bytes": 2307219,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780242555.8573031,
-        "down_speed": 1309110,
-        "up_speed": 63833,
+        "last_active_time": 1780242562.8644114,
+        "down_speed": 528400,
+        "up_speed": 57705,
         "created_at": 1780242102,
         "expire_seconds": 2592000,
         "active": true
