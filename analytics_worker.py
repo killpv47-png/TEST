@@ -9,8 +9,8 @@ import uuid
 import secrets
 import re
 import sys
-import urllib.parse
 from urllib.parse import parse_qs
+import urllib.parse
 
 CONFIG_PATH = "/usr/local/etc/xray/config.json"
 XRAY_LOG_PATH = "/usr/local/etc/xray/xray_runtime.log"
@@ -33,7 +33,6 @@ else:
 
 def load_database():
     """بارگذاری فوق امن و بدون نقص دیتابیس کلاینت‌ها برای جلوگیری از باگ یک‌بار در میان"""
-    # اولویت اول: خواندن از فایل مستقیم JSON اگر در این سشن موجود باشد
     if os.path.exists(DB_PATH):
         try:
             with open(DB_PATH, 'r') as f:
@@ -43,7 +42,6 @@ def load_database():
         except Exception:
             pass
 
-    # اولویت دوم: استخراج دیتابیس پشتیبان از فایل پیکربندی Xray قبلی پیش از بازنویسی
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, 'r') as f:
@@ -56,7 +54,6 @@ def load_database():
         except Exception:
             pass
 
-    # کلاینت پیش‌فرض سیستم در صورت عدم وجود دیتابیس قبلی
     return {
         "Main_kill_pv2": {
             "uuid": "b6a00fb0-460e-4323-96af-3ba2f48470ee",
@@ -73,7 +70,6 @@ def load_database():
         }
     }
 
-# اجرای آنی لودر دیتابیس پیش از هرگونه پردازش هسته
 configs_db = load_database()
 
 def save_database():
@@ -106,8 +102,6 @@ def check_expiration_and_limits():
 
 def sync_xray_core():
     clients = [{"id": u_data["uuid"], "email": u_name, "level": 0} for u_name, u_data in configs_db.items() if u_data.get("active", True)]
-    
-    # کدگذاری کل دیتابیس به صورت Base64 و تزریق به کانفیگ هسته برای پایداری مطلق دیتابیس
     db_backup_string = base64.b64encode(json.dumps(configs_db).encode('utf-8')).decode('utf-8')
 
     xray_json_config = {
@@ -324,35 +318,25 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                 total_bytes = u_data["total_limit_bytes"]
                 rem_bytes = max(0, total_bytes - u_data["used_bytes"]) if total_bytes > 0 else 0
                 
-                # محاسبه زمان و انقضای باقیمانده برای نمایش در ساب
-                now = int(time.time())
-                passed_seconds = now - u_data.get("created_at", now)
-                total_seconds = u_data.get("expire_seconds", 2592000)
-                rem_seconds = max(0, total_seconds - passed_seconds)
-                rem_d = int(rem_seconds // 86400)
-                rem_h = int((rem_seconds % 86400) // 3600)
-                expire_timestamp = u_data.get("created_at", now) + total_seconds
+                # رفع کامل باگ تداخل کوتیشن‌ها در متون فارسی کلاینت
+                txt_used = f"📊 مصرف شده: {format_bytes(u_data['used_bytes'])}"
+                txt_total = f"📈 حجم کل: {format_bytes(total_bytes) if total_bytes > 0 else 'نامحدود'}"
+                txt_rem = f"📉 باقی‌مانده: {format_bytes(rem_bytes) if total_bytes > 0 else 'نامحدود'}"
                 
-                # ساخت دامنه‌های فیک با انکود استاندارد جهت نمایش منظم ترافیک در کلاینت‌ها
-                fake_user = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'👤 کاربر: {target_user}')}"
-                fake_used = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'📊 مصرف شده: {format_bytes(u_data[\"used_bytes\"])}')}"
-                fake_rem = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'🔋 باقیمانده: {format_bytes(rem_bytes) if total_bytes > 0 else \"نامحدود\"}')}"
-                fake_time = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'⏳ اعتبار: {rem_d} روز و {rem_h} ساعت')}"
-                fake_line = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote('───────────────────────')}"
-
+                fake_used = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(txt_used)}"
+                fake_total = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(txt_total)}"
+                fake_rem = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(txt_rem)}"
+                
                 sub_info_comment = f"// USER: {target_user} | USED: {format_bytes(u_data['used_bytes'])} | TOTAL: {format_bytes(total_bytes) if total_bytes > 0 else 'نامحدود'} | REMAINING: {format_bytes(rem_bytes) if total_bytes > 0 else 'نامحدود'}\n"
                 
                 clean_link = f"vless://{u_data['uuid']}@{c_ip}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Clean"
                 regular_link = f"vless://{u_data['uuid']}@{tunnel_host}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0#{target_user}_Direct"
                 
-                # سرهم‌بندی نهایی ترافیک فیک و کدهای اصلی برای خروجی سابسکریپشن
-                payload = f"{sub_info_comment}{fake_user}\n{fake_used}\n{fake_rem}\n{fake_time}\n{fake_line}\n{clean_link}\n{regular_link}\n"
-                encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
+                payload = f"{sub_info_comment}{fake_used}\n{fake_total}\n{fake_rem}\n{clean_link}\n{regular_link}\n"
                 
+                encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/plain; charset=utf-8')
-                # ارسال اطلاعات مصرف کلاینت در هدر اصلی جهت پردازش نواری بالای v2rayNG
-                self.send_header('Subscription-Userinfo', f'upload=0; download={u_data["used_bytes"]}; total={total_bytes}; expire={expire_timestamp}')
                 self.end_headers()
                 self.wfile.write(encoded_payload.encode('utf-8'))
                 return
