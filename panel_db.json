@@ -28,12 +28,12 @@
     "Jhj": {
         "uuid": "46d76443-b403-46da-ae00-fceee222265e",
         "total_limit_bytes": 1788853878784,
-        "used_bytes": 71165609854,
+        "used_bytes": 71289145577,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780225268.0633287,
-        "down_speed": 398079,
-        "up_speed": 77601,
+        "last_active_time": 1780225868.1434498,
+        "down_speed": 1148595,
+        "up_speed": 65875,
         "created_at": 1780220621,
         "expire_seconds": 2592000,
         "active": true
