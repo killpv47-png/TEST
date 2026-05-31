@@ -54,12 +54,12 @@
     "5GB": {
         "uuid": "b68e8582-0e9f-4aa8-9d62-df7faa299249",
         "total_limit_bytes": 6442450944,
-        "used_bytes": 800792494,
+        "used_bytes": 803214216,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780250865.3332,
-        "down_speed": 0,
-        "up_speed": 0,
+        "last_active_time": 1780250932.5953336,
+        "down_speed": 1156313,
+        "up_speed": 66138,
         "created_at": 1780233496,
         "expire_seconds": 2592000,
         "active": true
