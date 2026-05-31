@@ -41,12 +41,12 @@
     "admin": {
         "uuid": "1e768823-1c9f-492f-9232-0813515f5870",
         "total_limit_bytes": 16106127360,
-        "used_bytes": 910523092,
+        "used_bytes": 912073549,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780238904.4317765,
-        "down_speed": 1494765,
-        "up_speed": 67528,
+        "last_active_time": 1780238964.286368,
+        "down_speed": 810439,
+        "up_speed": 55573,
         "created_at": 1780223842,
         "expire_seconds": 2592000,
         "active": true
@@ -93,12 +93,12 @@
     "TEST": {
         "uuid": "b0248e87-ecb4-4ef8-9ca0-79e2f9d275b0",
         "total_limit_bytes": 104857600,
-        "used_bytes": 82237755,
+        "used_bytes": 85484392,
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
-        "last_active_time": 1780238869.4000633,
-        "down_speed": 0,
-        "up_speed": 0,
+        "last_active_time": 1780238965.0874035,
+        "down_speed": 723217,
+        "up_speed": 65266,
         "created_at": 1780237650,
         "expire_seconds": 2592000,
         "active": true
