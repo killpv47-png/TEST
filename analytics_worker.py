@@ -9,6 +9,7 @@ import uuid
 import secrets
 import re
 import sys
+import urllib.parse
 from urllib.parse import parse_qs
 
 CONFIG_PATH = "/usr/local/etc/xray/config.json"
@@ -23,12 +24,7 @@ SESSION_TOKEN = secrets.token_hex(16)
 SYSTEM_LIVE_LOGS = []
 USER_TARGET_SITES = {}
 
-db_lock = threading.Lock()
-git_lock = threading.Lock()
-db_has_changed = False
-
-GITHUB_REPO_ENV = os.environ.get('GITHUB_REPOSITORY', 'username/repo')
-
+# خواندن هدر تانل فعال
 if os.path.exists('active_edge_host.txt'):
     with open('active_edge_host.txt', 'r') as f:
         tunnel_host = f.read().strip()
@@ -36,6 +32,8 @@ else:
     tunnel_host = "127.0.0.1"
 
 def load_database():
+    """بارگذاری فوق امن و بدون نقص دیتابیس کلاینت‌ها برای جلوگیری از باگ یک‌بار در میان"""
+    # اولویت اول: خواندن از فایل مستقیم JSON اگر در این سشن موجود باشد
     if os.path.exists(DB_PATH):
         try:
             with open(DB_PATH, 'r') as f:
@@ -45,6 +43,7 @@ def load_database():
         except Exception:
             pass
 
+    # اولویت دوم: استخراج دیتابیس پشتیبان از فایل پیکربندی Xray قبلی پیش از بازنویسی
     if os.path.exists(CONFIG_PATH):
         try:
             with open(CONFIG_PATH, 'r') as f:
@@ -57,6 +56,7 @@ def load_database():
         except Exception:
             pass
 
+    # کلاینت پیش‌فرض سیستم در صورت عدم وجود دیتابیس قبلی
     return {
         "Main_kill_pv2": {
             "uuid": "b6a00fb0-460e-4323-96af-3ba2f48470ee",
@@ -73,69 +73,12 @@ def load_database():
         }
     }
 
+# اجرای آنی لودر دیتابیس پیش از هرگونه پردازش هسته
 configs_db = load_database()
 
-def write_to_disk_and_subs():
-    try:
-        with open(DB_PATH, 'w') as f:
-            json.dump(configs_db, f, indent=4)
-        
-        if not os.path.exists("subs"):
-            os.makedirs("subs")
-            
-        for target_user, u_data in configs_db.items():
-            if u_data.get("active", True):
-                c_ip = u_data.get("clean_ip", DEFAULT_CLEAN_IP)
-                clean_link = f"vless://{u_data['uuid']}@{c_ip}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Clean"
-                regular_link = f"vless://{u_data['uuid']}@{tunnel_host}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Direct"
-                payload = f"{clean_link}\n{regular_link}\n"
-                
-                encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
-                with open(f"subs/{target_user}.txt", "w") as sf:
-                    sf.write(encoded_payload)
-            else:
-                if os.path.exists(f"subs/{target_user}.txt"):
-                    try: os.remove(f"subs/{target_user}.txt")
-                    except: pass
-    except Exception:
-        pass
-
 def save_database():
-    global db_has_changed
-    db_has_changed = True
-
-def git_push_to_github(message="Update panel state"):
-    def run_push():
-        with git_lock:
-            with db_lock:
-                write_to_disk_and_subs()
-            subprocess.run('git config --local user.email "action@github.com"', shell=True)
-            subprocess.run('git config --local user.name "GitHub Action"', shell=True)
-            subprocess.run('git add panel_db.json subs/ || true', shell=True)
-            subprocess.run(f'git commit -m "{message} [Skip CI]" || true', shell=True)
-            for _ in range(5):
-                pull_res = subprocess.run('git pull origin main --rebase', shell=True)
-                if pull_res.returncode != 0:
-                    subprocess.run('git rebase --abort', shell=True)
-                push_res = subprocess.run('git push origin main', shell=True)
-                if push_res.returncode == 0:
-                    break
-                time.sleep(4)
-    threading.Thread(target=run_push, daemon=True).start()
-
-def bg_disk_saver():
-    global db_has_changed
-    while True:
-        time.sleep(1)
-        if db_has_changed:
-            with db_lock:
-                write_to_disk_and_subs()
-            db_has_changed = False
-
-def bg_periodic_git_saver():
-    while True:
-        time.sleep(600)
-        git_push_to_github("🔄 Periodic traffic stats synchronization")
+    with open(DB_PATH, 'w') as f:
+        json.dump(configs_db, f, indent=4)
 
 def check_expiration_and_limits():
     now = int(time.time())
@@ -163,6 +106,8 @@ def check_expiration_and_limits():
 
 def sync_xray_core():
     clients = [{"id": u_data["uuid"], "email": u_name, "level": 0} for u_name, u_data in configs_db.items() if u_data.get("active", True)]
+    
+    # کدگذاری کل دیتابیس به صورت Base64 و تزریق به کانفیگ هسته برای پایداری مطلق دیتابیس
     db_backup_string = base64.b64encode(json.dumps(configs_db).encode('utf-8')).decode('utf-8')
 
     xray_json_config = {
@@ -287,29 +232,26 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                     "active": True
                 }
                 USER_TARGET_SITES[username] = []
+                save_database()
                 sync_xray_core()
-                git_push_to_github(f"Create user {username}")
                 
         elif action == 'toggle':
-            username = params.get('username', [''])[0].strip()
+            username = params.get('username', [''])[0]
             if username in configs_db:
                 configs_db[username]["active"] = not configs_db[username].get("active", True)
                 if configs_db[username]["active"]:
                     configs_db[username]["created_at"] = int(time.time())
                     configs_db[username]["status"] = "OFFLINE"
+                save_database()
                 sync_xray_core()
-                git_push_to_github(f"Toggle user {username}")
                 
         elif action == 'delete':
-            username = params.get('username', [''])[0].strip()
+            username = params.get('username', [''])[0]
             if username in configs_db:
                 del configs_db[username]
                 if username in USER_TARGET_SITES: del USER_TARGET_SITES[username]
-                if os.path.exists(f"subs/{username}.txt"):
-                    try: os.remove(f"subs/{username}.txt")
-                    except: pass
+                save_database()
                 sync_xray_core()
-                git_push_to_github(f"Delete user {username}")
         
         self.send_response(303)
         self.send_header('Location', '/')
@@ -379,13 +321,38 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                 u_data = configs_db[target_user]
                 c_ip = u_data.get("clean_ip", DEFAULT_CLEAN_IP)
                 
-                clean_link = f"vless://{u_data['uuid']}@{c_ip}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Clean"
-                regular_link = f"vless://{u_data['uuid']}@{tunnel_host}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Direct"
-                payload = f"{clean_link}\n{regular_link}\n"
+                total_bytes = u_data["total_limit_bytes"]
+                rem_bytes = max(0, total_bytes - u_data["used_bytes"]) if total_bytes > 0 else 0
                 
+                # محاسبه زمان و انقضای باقیمانده برای نمایش در ساب
+                now = int(time.time())
+                passed_seconds = now - u_data.get("created_at", now)
+                total_seconds = u_data.get("expire_seconds", 2592000)
+                rem_seconds = max(0, total_seconds - passed_seconds)
+                rem_d = int(rem_seconds // 86400)
+                rem_h = int((rem_seconds % 86400) // 3600)
+                expire_timestamp = u_data.get("created_at", now) + total_seconds
+                
+                # ساخت دامنه‌های فیک با انکود استاندارد جهت نمایش منظم ترافیک در کلاینت‌ها
+                fake_user = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'👤 کاربر: {target_user}')}"
+                fake_used = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'📊 مصرف شده: {format_bytes(u_data[\"used_bytes\"])}')}"
+                fake_rem = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'🔋 باقیمانده: {format_bytes(rem_bytes) if total_bytes > 0 else \"نامحدود\"}')}"
+                fake_time = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote(f'⏳ اعتبار: {rem_d} روز و {rem_h} ساعت')}"
+                fake_line = f"vless://00000000-0000-0000-0000-000000000000@127.0.0.1:1080?encryption=none#{urllib.parse.quote('───────────────────────')}"
+
+                sub_info_comment = f"// USER: {target_user} | USED: {format_bytes(u_data['used_bytes'])} | TOTAL: {format_bytes(total_bytes) if total_bytes > 0 else 'نامحدود'} | REMAINING: {format_bytes(rem_bytes) if total_bytes > 0 else 'نامحدود'}\n"
+                
+                clean_link = f"vless://{u_data['uuid']}@{c_ip}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0&host={tunnel_host}&sni={tunnel_host}#{target_user}_Clean"
+                regular_link = f"vless://{u_data['uuid']}@{tunnel_host}:443?path=%2Fkillpv2&security=tls&encryption=none&insecure=0&type=ws&allowInsecure=0#{target_user}_Direct"
+                
+                # سرهم‌بندی نهایی ترافیک فیک و کدهای اصلی برای خروجی سابسکریپشن
+                payload = f"{sub_info_comment}{fake_user}\n{fake_used}\n{fake_rem}\n{fake_time}\n{fake_line}\n{clean_link}\n{regular_link}\n"
                 encoded_payload = base64.b64encode(payload.encode('utf-8')).decode('utf-8')
+                
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                # ارسال اطلاعات مصرف کلاینت در هدر اصلی جهت پردازش نواری بالای v2rayNG
+                self.send_header('Subscription-Userinfo', f'upload=0; download={u_data["used_bytes"]}; total={total_bytes}; expire={expire_timestamp}')
                 self.end_headers()
                 self.wfile.write(encoded_payload.encode('utf-8'))
                 return
@@ -460,10 +427,10 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                     .user-flex {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }}
                     .u-name {{ font-weight: bold; color: #e2e8f0; font-size: 1rem; }}
                     .badge {{ padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }}
-                    .badge bg-online {{ background: rgba(16,185,129,0.15); color: #34d399; }}
-                    .badge bg-offline {{ background: rgba(239,68,68,0.15); color: #f87171; }}
-                    .badge bg-disabled {{ background: #334155; color: #94a3b8; }}
-                    .badge bg-expired {{ background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px dashed #ef4444; }}
+                    .bg-online {{ background: rgba(16,185,129,0.15); color: #34d399; }}
+                    .bg-offline {{ background: rgba(239,68,68,0.15); color: #f87171; }}
+                    .bg-disabled {{ background: #334155; color: #94a3b8; }}
+                    .bg-expired {{ background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px dashed #ef4444; }}
                     .data-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem; color: var(--text-p); border-top: 1px solid #273659; padding-top: 8px; }}
                     .p-bar-bg {{ width: 100%; background: #2d3d5f; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }}
                     .p-bar-fill {{ background: var(--accent); height: 100%; width: 0%; transition: width 0.4s; }}
@@ -565,9 +532,9 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                     }}
 
                     function copyFixedSubscription(user) {{
-                        let fixedSubUrl = "https://raw.githubusercontent.com/" + "{GITHUB_REPO_ENV}" + "/main/subs/" + user + ".txt";
+                        let fixedSubUrl = "https://" + window.location.host + "/sub/" + user;
                         navigator.clipboard.writeText(fixedSubUrl);
-                        alert("🔗 لینک ساب ۱۰۰٪ ثابت گیت‌هاب کپی شد داداش!\\n\\n⚠️ نکته: بعد از ایجاد یا تغییر کاربر، گیت‌هاب تا ۵ دقیقه لینک رو کش میکنه، بعدش خودکار توی v2rayNG بروز میشه.");
+                        alert("🔗 لینک ساب پایدار این کلاینت کپی شد داداش! با ران مجدد تغییر نمیکند.");
                     }}
 
                     const cleanIpsToTest = [];
@@ -802,12 +769,9 @@ def xray_live_log_sniffer():
                     configs_db[user_name]["up_speed"] = secrets.randbelow(30000) + 50000
                     save_database()
 
-write_to_disk_and_subs()
 sync_xray_core()
 threading.Thread(target=lambda: HTTPServer(('127.0.0.1', 8086), SanaeiMobileXuiServer).serve_forever(), daemon=True).start()
 threading.Thread(target=xray_live_log_sniffer, daemon=True).start()
-threading.Thread(target=bg_disk_saver, daemon=True).start()
-threading.Thread(target=bg_periodic_git_saver, daemon=True).start()
 
 total_duration = 19800
 elapsed = 0
