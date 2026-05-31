@@ -25,19 +25,6 @@
         "expire_seconds": 2592000,
         "active": false
     },
-    "5GB": {
-        "uuid": "b68e8582-0e9f-4aa8-9d62-df7faa299249",
-        "total_limit_bytes": 6442450944,
-        "used_bytes": 905218933,
-        "clean_ip": "172.64.149.23",
-        "status": "OFFLINE",
-        "last_active_time": 1780258092.931971,
-        "down_speed": 0,
-        "up_speed": 0,
-        "created_at": 1780233496,
-        "expire_seconds": 2592000,
-        "active": false
-    },
     "T": {
         "uuid": "d3e7e376-0d78-46f3-9855-4b6b2dfd9997",
         "total_limit_bytes": 104857600,
