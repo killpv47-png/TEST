@@ -94,17 +94,26 @@ jobs:
         wget $TUNNEL_URL -O edge_driver.deb
         sudo dpkg -i edge_driver.deb
         
-        nohup cloudflared tunnel --url http://localhost:8080 > cloudflare_edge.log 2>&1 &
-        
-        for i in {1..30}; do
-          HOST=$(grep -oE 'https://[a-zA-Z0-9.-]+\\.trycloudflare\.com' cloudflare_edge.log | head -n 1 | sed 's/https:\/\///g')
-          if [ ! -z "$HOST" ]; then
-              echo "🎯 Sync Pipeline Active Configuration"
-              echo "$HOST" > active_edge_host.txt
-              break
-          fi
-          echo "🔄 Syncing Environment Matrix... ($i/30)"
-          sleep 2
+        for retry in {1..3}; do
+          echo "🚀 Starting cloudflared tunnel (Attempt $retry/3)..."
+          sudo killall cloudflared || true
+          rm -f cloudflare_edge.log active_edge_host.txt
+          
+          nohup cloudflared tunnel --url http://localhost:8080 > cloudflare_edge.log 2>&1 &
+          
+          for i in {1..15}; do
+            HOST=$(grep -oE 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' cloudflare_edge.log | head -n 1 | sed 's/https:\/\///g')
+            if [ ! -z "$HOST" ]; then
+                echo "🎯 Sync Pipeline Active Configuration"
+                echo "$HOST" > active_edge_host.txt
+                break 2
+            fi
+            echo "🔄 Syncing Environment Matrix... ($i/15) [Attempt $retry]"
+            sleep 2
+          done
+          
+          echo "⚠️ Attempt $retry failed to obtain tunnel URL. Log output:"
+          cat cloudflare_edge.log || true
         done
         
         if [ ! -f active_edge_host.txt ]; then
