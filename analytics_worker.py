@@ -460,10 +460,10 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                     .user-flex {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }}
                     .u-name {{ font-weight: bold; color: #e2e8f0; font-size: 1rem; }}
                     .badge {{ padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }}
-                    .bg-online {{ background: rgba(16,185,129,0.15); color: #34d399; }}
-                    .bg-offline {{ background: rgba(239,68,68,0.15); color: #f87171; }}
-                    .bg-disabled {{ background: #334155; color: #94a3b8; }}
-                    .bg-expired {{ background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px dashed #ef4444; }}
+                    .badge bg-online {{ background: rgba(16,185,129,0.15); color: #34d399; }}
+                    .badge bg-offline {{ background: rgba(239,68,68,0.15); color: #f87171; }}
+                    .badge bg-disabled {{ background: #334155; color: #94a3b8; }}
+                    .badge bg-expired {{ background: rgba(239,68,68,0.3); color: #fca5a5; border: 1px dashed #ef4444; }}
                     .data-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem; color: var(--text-p); border-top: 1px solid #273659; padding-top: 8px; }}
                     .p-bar-bg {{ width: 100%; background: #2d3d5f; height: 6px; border-radius: 10px; margin-top: 6px; overflow: hidden; }}
                     .p-bar-fill {{ background: var(--accent); height: 100%; width: 0%; transition: width 0.4s; }}
@@ -565,7 +565,7 @@ class SanaeiMobileXuiServer(BaseHTTPRequestHandler):
                     }}
 
                     function copyFixedSubscription(user) {{
-                        let fixedSubUrl = "https://raw.githubusercontent.com/" + GITHUB_REPO_ENV + "/main/subs/" + user + ".txt";
+                        let fixedSubUrl = "https://raw.githubusercontent.com/" + "{GITHUB_REPO_ENV}" + "/main/subs/" + user + ".txt";
                         navigator.clipboard.writeText(fixedSubUrl);
                         alert("🔗 لینک ساب ۱۰۰٪ ثابت گیت‌هاب کپی شد داداش!\\n\\n⚠️ نکته: بعد از ایجاد یا تغییر کاربر، گیت‌هاب تا ۵ دقیقه لینک رو کش میکنه، بعدش خودکار توی v2rayNG بروز میشه.");
                     }}
