@@ -36,7 +36,7 @@
         "up_speed": 0,
         "created_at": 1780223842,
         "expire_seconds": 2592000,
-        "active": true
+        "active": false
     },
     "6GB": {
         "uuid": "04577598-8a07-4dbc-a26e-0654531378fe",
@@ -136,8 +136,8 @@
         "clean_ip": "172.64.149.23",
         "status": "ONLINE",
         "last_active_time": 1780242578.6774147,
-        "down_speed": 963780,
-        "up_speed": 74818,
+        "down_speed": 0,
+        "up_speed": 0,
         "created_at": 1780242102,
         "expire_seconds": 2592000,
         "active": true
