@@ -147,12 +147,12 @@
         "total_limit_bytes": 0,
         "used_bytes": 39127641,
         "clean_ip": "172.64.149.23",
-        "status": "ONLINE",
+        "status": "OFFLINE",
         "last_active_time": 1780247980.6782072,
-        "down_speed": 446129,
-        "up_speed": 61235,
-        "created_at": 1780246560,
+        "down_speed": 0,
+        "up_speed": 0,
+        "created_at": 1780248007,
         "expire_seconds": 2592000,
-        "active": false
+        "active": true
     }
 }
